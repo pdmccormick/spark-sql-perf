@@ -7,14 +7,8 @@ organization := "com.databricks"
 
 scalaVersion := "2.10.4"
 
-sparkPackageName := "databricks/spark-sql-perf"
-
 // All Spark Packages need a license
 licenses := Seq("Apache-2.0" -> url("http://opensource.org/licenses/Apache-2.0"))
-
-sparkVersion := "2.0.0-SNAPSHOT"
-
-sparkComponents ++= Seq("sql", "hive")
 
 initialCommands in console :=
   """
@@ -30,7 +24,8 @@ initialCommands in console :=
   """.stripMargin
 
 // TODO: remove after Spark 2.0.0 is released:
-resolvers += "apache-snapshots" at "https://repository.apache.org/snapshots/"
+//resolvers += "apache-snapshots" at "https://repository.apache.org/snapshots/"
+resolvers += Resolver.sonatypeRepo("public")
 
 libraryDependencies += "org.slf4j" % "slf4j-api" % "1.7.5"
 
@@ -40,19 +35,12 @@ libraryDependencies += "com.twitter" %% "util-jvm" % "6.23.0" % "provided"
 
 libraryDependencies += "org.scalatest" %% "scalatest" % "2.2.1" % "test"
 
+libraryDependencies += "org.apache.spark" %% "spark-core" % "1.6.0" % "provided"
+libraryDependencies += "org.apache.spark" %% "spark-hive" % "1.6.0" % "provided"
+
 fork := true
 
-val runBenchmark = inputKey[Unit]("runs a benchmark")
-
-runBenchmark := {
-  import complete.DefaultParsers._
-  val args = spaceDelimited("[args]").parsed
-  val scalaRun = (runner in run).value
-  val classpath = (fullClasspath in Compile).value
-  scalaRun.run("com.databricks.spark.sql.perf.RunBenchmark", classpath.map(_.data), args, streams.value.log)
-}
-
-import ReleaseTransformations._
+test in assembly := {}
 
 /********************
  * Release settings *
@@ -63,8 +51,6 @@ publishMavenStyle := true
 releaseCrossBuild := true
 
 licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0"))
-
-releasePublishArtifactsAction := PgpKeys.publishSigned.value
 
 pomExtra := (
       <url>https://github.com/databricks/spark-sql-perf</url>
@@ -102,17 +88,3 @@ pomExtra := (
     )
 
 bintrayReleaseOnPublish in ThisBuild := false
-
-// Add publishing to spark packages as another step.
-releaseProcess := Seq[ReleaseStep](
-  checkSnapshotDependencies,
-  inquireVersions,
-  runTest,
-  setReleaseVersion,
-  commitReleaseVersion,
-  tagRelease,
-  publishArtifacts,
-  setNextVersion,
-  commitNextVersion,
-  pushChanges
-)
